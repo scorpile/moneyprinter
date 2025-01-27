@@ -18,4 +18,4 @@ Want to contribute? Please do it! If you think you can contribute to this projec
 Contributions
 If you wanna donate, so i can continue working on those Automatic Trade Bots, my Binance ID is: 322411022
 Here is a QR so you can donate directly: 
-![Binance QR](https://github.com/scorpile/moneyprinter/blob/main/binance.jpg?raw=true)
+![Binance QR](https://github.com/scorpile/moneyprinter/blob/main/binance.jpg?raw=true {width=500px height=691px})
