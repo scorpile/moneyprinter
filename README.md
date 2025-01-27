@@ -40,3 +40,7 @@ If you wanna donate, so i can continue working on those Automatic Trade Bots, my
 Here is a QR so you can donate directly:
 
 <img src="https://github.com/scorpile/moneyprinter/raw/main/binance.jpg?raw=true" alt="Binance QR" style="width: 400px;">
+
+Important!
+
+This is a work in progress, you wont gain any money at current state! If you wanna test, take in mind you will be risking your money and i wont be responsible of any loss.
