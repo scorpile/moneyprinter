@@ -4,7 +4,6 @@ from datetime import datetime
 from discord_webhook import DiscordWebhook, DiscordEmbed
 import data  # Importamos las variables de data.py
 from client import BinanceClient  # Importamos la clase BinanceClient
-import yfinance as yf
 from binance.enums import SIDE_BUY, SIDE_SELL
 import pandas as pd
 from data import symbol
