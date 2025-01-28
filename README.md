@@ -209,7 +209,7 @@ The strategy employs multiple exit conditions to secure profits or minimize loss
 
 5. **Running the Bot:**
 
-   After setting up the virtual environment and installing the dependencies, you can run the bot using the following command:
+   After setting up the virtual environment and installing the dependencies, you should set your Binance API key & secret, and the Discord Channel Webhook into the .env file, then you can run the bot using the following command:
 
    ```bash
    python moneyprinter.py
