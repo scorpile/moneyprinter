@@ -8,12 +8,12 @@ import traceback
 import numpy as np
 from data import symbol
 
-# Inicializar el bot de trading
+# Initialize the trading bot
 bot = bot.TradeBot()
 
 def makeTrade(tradearray, trends, type):
     """
-    Realiza una operación de compra o venta.
+    Performs a buy or sell operation.
     """
     success = False
 
@@ -86,7 +86,7 @@ def makeTrade(tradearray, trends, type):
 
 def createCSV():
     """
-    Crea un archivo CSV para registrar las operaciones.
+    Creates a CSV file to record trades.
     """
     fields = ['TIME', 'HIGH', 'LOW', 'CLOSE', 'RSI', 'VWAP', 'EMA12', 'EMA26', 'MACD', 'STOCH']
     now = datetime.now()
@@ -99,9 +99,9 @@ def createCSV():
 
 def compareForEntry(previous, dataDict):
     """
-    Compara los datos actuales con los anteriores para determinar si se debe entrar en una operación.
+    Compares current data with previous data to determine if a trade should be entered.
     """
-    # Asegúrate de que estás comparando valores escalares
+    # Ensure that you are comparing scalar values
     stock_open = dataDict['stockOpen'].iloc[-1] if hasattr(dataDict['stockOpen'], 'iloc') else dataDict['stockOpen']
     close_price = dataDict['close'].iloc[-1] if hasattr(dataDict['close'], 'iloc') else dataDict['close']
     previous_close = previous['close'][-1]
@@ -111,7 +111,7 @@ def compareForEntry(previous, dataDict):
     else:
         priceDowntrend = False
 
-    # Comparar MACD
+    # Compare MACD
     macd = dataDict['MACD'].iloc[-1] if hasattr(dataDict['MACD'], 'iloc') else dataDict['MACD']
     previous_macd = previous['MACD'][-1]
     if macd < previous_macd:
@@ -119,7 +119,7 @@ def compareForEntry(previous, dataDict):
     else:
         MACDdowntrend = False
 
-    # Comparar RSI
+    # Compare RSI
     rsi = dataDict['RSI'].iloc[-1] if hasattr(dataDict['RSI'], 'iloc') else dataDict['RSI']
     previous_rsi = previous['RSI'][-1]
     if rsi < previous_rsi:
@@ -127,7 +127,7 @@ def compareForEntry(previous, dataDict):
     else:
         RSIdowntrend = False
 
-    # Comparar VWAP
+    # Compare VWAP
     vwap = dataDict['VWAP'].iloc[-1] if hasattr(dataDict['VWAP'], 'iloc') else dataDict['VWAP']
     previous_vwap = previous['VWAP'][-1]
     if close_price < vwap:
@@ -138,7 +138,7 @@ def compareForEntry(previous, dataDict):
     else:
         LowerFromVWAP = False
 
-    # Comparar STOCH
+    # Compare STOCH
     stoch = dataDict['STOCH'].iloc[-1] if hasattr(dataDict['STOCH'], 'iloc') else dataDict['STOCH']
     previous_stoch = previous['STOCH'][-1]
     if stoch < previous_stoch:
@@ -146,13 +146,13 @@ def compareForEntry(previous, dataDict):
     else:
         STOCHdowntrend = False
 
-    # Comparar close
+    # Compare close
     if close_price < previous_close:
         closeDowntrend = True
     else:
         closeDowntrend = False
 
-    # Comparar EMA12
+    # Compare EMA12
     ema12 = dataDict['ema12'].iloc[-1] if hasattr(dataDict['ema12'], 'iloc') else dataDict['ema12']
     previous_ema12 = previous['ema12'][-1]
     if stock_open < ema12 or close_price < ema12:
@@ -167,24 +167,23 @@ def compareForEntry(previous, dataDict):
 
 def calculate_macd_threshold(macd_values, percentile=0.05):
     """
-    Calcula un umbral dinámico de MACD tomando el percentil (por defecto 5%).
-    Si el MACD actual cae por debajo de este umbral, se considera
-    que está en 'zona muy baja' respecto a la historia reciente.
+    Calculates a dynamic MACD threshold by taking the percentile (default 5%).
+    If the current MACD falls below this threshold, it is considered to be in the 'very low zone' relative to recent history.
 
-    :param macd_values: Lista o array de valores recientes del MACD
-    :param percentile:  Valor entre 0 y 1 que indica el percentil
-                        (0.05 => 5% de los valores están por debajo)
-    :return:            Umbral de MACD
+    :param macd_values: List or array of recent MACD values
+    :param percentile:  Value between 0 and 1 indicating the percentile
+                        (0.05 => 5% of values are below)
+    :return:            MACD threshold
     """
-    # Convertir a numpy array por comodidad
+    # Convert to numpy array for convenience
     macd_array = np.array(macd_values)
 
-    # Calcular el umbral del percentil
+    # Calculate the percentile threshold
     threshold = np.quantile(macd_array, percentile)
 
     return threshold
 
-# Variables iniciales
+# Initial variables
 laststatus = 'NULL'
 rsis = []
 volumes = []
@@ -198,17 +197,17 @@ last_secs = '0'
 MACDdowntrend = False
 RSIdowntrend = False
 
-# Datos y tendencias anteriores
+# Previous data and trends
 previous = {'VWAP': [], 'close': [], 'MACD': [], 'RSI': [], 'STOCH': [], 'ema12': [], 'stockOpen': []}
 previousTrends = {'priceDowntrend': [], 'MACDdowntrend': [], 'RSIdowntrend': [], 'LowerFromVWAP': [],
                   'STOCHdowntrend': [], 'closeDowntrend': [], 'LowerFromEMA12': []}
 
-# Inicializar el bot de trading
+# Initialize the trading bot
 bot.pushDiscordNotif(data.discordwebhook, type='start_msg')
 
-# Bucle principal
+# Main loop
 while True:
-    # Actualizar datos anteriores
+    # Update previous data
     if first:
         pass
     else:
@@ -220,7 +219,7 @@ while True:
         previous['ema12'].append(ema12)
         previous['stockOpen'].append(stockOpen)
 
-    # Obtener datos del mercado
+    # Get market data
     dataWorking = False
     while dataWorking == False:
         try:
@@ -232,7 +231,7 @@ while True:
             time.sleep(10)
             pass
 
-    # Asignar datos del mercado
+    # Assign market data
     high = dataDict['high']
     stockOpen = dataDict['stockOpen']
     low = dataDict['low']
@@ -318,7 +317,7 @@ while True:
             for key, value in previousTrends.items():
                 previousTrends[key] = value[20:]
 
-    # Actualizar tiempo
+    # Update time
     now = datetime.now()
     lastminute = now.strftime("%M")
     current_time = now.strftime("%H:%M")
@@ -328,7 +327,7 @@ while True:
 
     last_secs = current_secs
 
-    # Imprimir mensaje en la consola
+    # Print message to console
     print()
     print()
     print('###############################')
@@ -343,7 +342,7 @@ while True:
     print()
     print('###############################')
 
-    # Verificar condiciones para entrar en una operación
+    # Check conditions to enter a trade
     try:
         testa = previous['close'][-1]
     except:
@@ -357,7 +356,7 @@ while True:
     lowestMACD = min(lowestMACD, MACD)
     lowestRSI  = min(lowestRSI, RSI)
 
-    # Algoritmo para colocar una operación
+    # Algorithm to place a trade
     macd_hist = previous['MACD'][-100:]
     MACD_THRESHOLD = calculate_macd_threshold(macd_hist, percentile=0.1)
     MACD_THRESHOLD = -0.08
@@ -368,7 +367,7 @@ while True:
             if histogram < 0:
                 print('[TRADEBOT] watching for a trade.')
 
-                # Actualizar datos anteriores
+                # Update previous data
                 previous['VWAP'].append(VWAP)
                 previous['close'].append(close)
                 previous['MACD'].append(MACD)
@@ -378,13 +377,13 @@ while True:
                 previous['ema12'].append(ema12)
                 previous['stockOpen'].append(stockOpen)
 
-                # Enviar mensaje de Discord
+                # Send Discord message
                 bot.watching = True
                 pushDiscordMessageSuccess = bot.pushDiscordNotif(data.discordwebhook, type='watching')
                 if pushDiscordMessageSuccess != True:
                     print('[TRADEBOT] CRITICAL ERROR IN DISCORD MESSAGE SYSTEM!')
 
-                # Variables de control
+                # Control variables
                 trade = True
                 waitForUptrend = False
                 possible = False
@@ -397,9 +396,9 @@ while True:
                 lowest_price_during_watch = close
                 time_in_watch = 0
 
-                # Bucle para colocar la operación
+                # Loop to place the trade
                 while trade:
-                    # Actualizar tiempo
+                    # Update time
                     now = datetime.now()
                     minute = now.strftime("%M")
                     current_time = now.strftime("%H:%M:%S")
@@ -415,7 +414,7 @@ while True:
                     last_secs = current_secs
                     lastminute = minute
 
-                    # Obtener nuevos datos
+                    # Get new data
                     dataWorking = False
                     while dataWorking == False:
                         try:
@@ -427,7 +426,7 @@ while True:
                             time.sleep(2)
                             pass
 
-                    # Guardar tendencias actuales
+                    # Save current trends
                     priceDowntrend, MACDdowntrend, RSIdowntrend, LowerFromVWAP, STOCHdowntrend, closeDowntrend, LowerFromEMA12 = compareForEntry(
                         previous, dataDict)
                     previousTrends['priceDowntrend'].append(priceDowntrend)
@@ -441,16 +440,16 @@ while True:
                     avgprices = dataDict['avgprices']
                     volumes = dataDict['volumes']
 
-                    # Guardar tiempo actual
+                    # Save current time
                     now = datetime.now()
                     current_time = now.strftime("%H:%M:%S")
 
-                    # Guardar datos de la operación
+                    # Save trade data
                     tradearray = [current_time, dataDict['high'], dataDict['low'], dataDict['close'], dataDict['RSI'],
                                 dataDict['VWAP'], dataDict['ema12'], dataDict['ema26'], dataDict['MACD'],
                                 dataDict['STOCH']]
 
-                    # Ordenar datos
+                    # Assign data
                     high = dataDict['high']
                     stockOpen = dataDict['stockOpen']
                     low = dataDict['low']
@@ -517,11 +516,11 @@ while True:
                     print()
                     print('###############################')
 
-                    # Comparar con el minuto anterior
+                    # Compare with the previous minute
                     currentTrends = [priceDowntrend, MACDdowntrend, RSIdowntrend, LowerFromVWAP, STOCHdowntrend,
                                     closeDowntrend, LowerFromEMA12]
 
-                    # Contar tendencias bajistas en el minuto actual
+                    # Count bearish trends in the current minute
                     trueCntNow = 0
                     trueCnt = 0
                     trueCnt_ = 0
@@ -531,7 +530,7 @@ while True:
                         if trend is True:
                             trueCntNow = trueCntNow + 1
 
-                    # Contar tendencias bajistas en el minuto anterior
+                    # Count bearish trends in the previous minute
                     try:
                         for trend, arr in previousTrends.items():
                             if arr[-2] is True:
@@ -559,16 +558,16 @@ while True:
                     if (
                         lowestRSI < 35
                         and RSI > previous['RSI'][-1]
-                        and close > ema5  # el precio cruza la EMA5 o la supera al cierre
-                        and MACD > previousMACD  # o "histogram" > histogram[-1], subiendo
-                        and not RSIdowntrend     # RSI deja de bajar (opcional)
+                        and close > ema5  # the price crosses the EMA5 or exceeds it at close
+                        and MACD > previousMACD  # or "histogram" > histogram[-1], rising
+                        and not RSIdowntrend     # RSI stops declining (optional)
                     ):
-                        # Variables esenciales
+                        # Essential variables
                         entryPrice = close
                         entryTrueCnt = trueCntNow
 
-                        tradearray.append('TRADE A')  # Registrar el algoritmo utilizado
-                        makeTrade(tradearray, currentTrends, 'BUY')  # Colocar la operación
+                        tradearray.append('TRADE A')  # Record the algorithm used
+                        makeTrade(tradearray, currentTrends, 'BUY')  # Place the trade
                         print(f'[TRADEBOT] placing LONG trade at {round(close, 2)}')
                         print('[TRADEBOT] algo A')
                         exitNeeded = True
@@ -579,18 +578,18 @@ while True:
                     #     -1] > ema55m and close > previous['close'][-3]:
                     elif (
                         lowestRSI < 30
-                        and MACD[-1] < MACD[-2] < MACD[-3]  # venía cayendo
-                        and MACD > previousMACD            # este MACD actual sube con respecto al último (cambio de pendiente)
-                        and (histogram[-1] > histogram[-2])  # histograma al alza
+                        and MACD[-1] < MACD[-2] < MACD[-3]  # was decreasing
+                        and MACD > previousMACD            # current MACD rises compared to last (change in slope)
+                        and (histogram[-1] > histogram[-2])  # histogram rising
                         and close > ema12
                         and RSI < 45
                     ):
-                        # Variables esenciales
+                        # Essential variables
                         entryPrice = close
                         entryTrueCnt = trueCntNow
 
-                        tradearray.append('TRADE B')  # Registrar el algoritmo utilizado
-                        makeTrade(tradearray, currentTrends, 'BUY')  # Colocar la operación
+                        tradearray.append('TRADE B')  # Record the algorithm used
+                        makeTrade(tradearray, currentTrends, 'BUY')  # Place the trade
                         print(f'[TRADEBOT] placing LONG trade at {round(close, 2)}')
                         print('[TRADEBOT] algo B')
                         exitNeeded = True
@@ -604,28 +603,28 @@ while True:
                         )
 
                         if not signal_still_valid:
-                            # Chequear si se perdió la señal por "ya subió" o "cayó más"  
-                            # Ejemplo: si RSI5m > 50 => se "escapó"  
-                            #          si RSI5m < 20 => sigue hundiéndose... 
-                            # Decide si sales. 
+                            # Check if the signal was lost due to "already rose" or "fell more"
+                            # Example: if RSI5m > 50 => "escaped"
+                            #          if RSI5m < 20 => continues to sink...
+                            # Decide if you exit.
                             print("[TRADEBOT] Signal invalidated, exiting watching mode.")
                             trade = False
                             break
 
-                        # 4) Añadir un "filtro" si el precio cae mucho más de un % 
+                        # 4) Add a "filter" if the price falls much more than a %
                         if close < watch_price * 0.97:
-                            print("[TRADEBOT] Se hundió más de 3% adicional. Saliendo de watching.")
+                            print("[TRADEBOT] Fell more than an additional 3%. Exiting watching.")
                             trade = False
                             break
 
-                        # 5) Timeout por velas/tiempo
+                        # 5) Timeout by candles/time
                         time_in_watch += 1
                         if time_in_watch >= 10:
-                            print("[TRADEBOT] Han pasado 10 iteraciones en modo watching, sin entrar. Salgo.")
+                            print("[TRADEBOT] 10 iterations have passed in watching mode without entering. Exiting.")
                             trade = False
                             break                
 
-                    # Guardar datos anteriores
+                    # Save previous data
                     previous['VWAP'].append(VWAP)
                     previous['close'].append(close)
                     previous['MACD'].append(MACD)
@@ -638,7 +637,7 @@ while True:
                 consider = False
                 loopNum = 0
 
-                # Bucle para salir de la operación
+                # Loop to exit the trade
                 while exitNeeded:
                     loopNum += 1
                     bot.logData()
@@ -647,7 +646,7 @@ while True:
                         bot.updateMessage()
                         loopNum = 0
 
-                    # Guardar datos anteriores
+                    # Save previous data
                     previous['VWAP'].append(VWAP)
                     previous['close'].append(close)
                     previous['MACD'].append(MACD)
@@ -656,7 +655,7 @@ while True:
                     previous['ema12'].append(ema12)
                     previous['stockOpen'].append(stockOpen)
 
-                    # Actualizar tiempo
+                    # Update time
                     now = datetime.now()
                     minute = now.strftime("%M")
                     current_time = now.strftime("%H:%M")
@@ -672,7 +671,7 @@ while True:
                     last_secs = current_secs
                     lastminute = minute
 
-                    # Obtener nuevos datos
+                    # Get new data
                     dataWorking = False
                     while dataWorking == False:
                         try:
@@ -682,7 +681,7 @@ while True:
                             time.sleep(2)
                             pass
 
-                    # Guardar tendencias actuales
+                    # Save current trends
                     priceDowntrend, MACDdowntrend, RSIdowntrend, LowerFromVWAP, STOCHdowntrend, closeDowntrend, LowerFromEMA12 = compareForEntry(
                         previous, dataDict)
                     previousTrends['priceDowntrend'].append(priceDowntrend)
@@ -696,16 +695,16 @@ while True:
                     avgprices = dataDict['avgprices']
                     volumes = dataDict['volumes']
 
-                    # Guardar tiempo actual
+                    # Save current time
                     now = datetime.now()
                     current_time = now.strftime("%H:%M")
 
-                    # Guardar datos de la operación
+                    # Save trade data
                     tradearray = [current_time, dataDict['high'], dataDict['low'], dataDict['close'], dataDict['RSI'],
                                 dataDict['VWAP'], dataDict['ema12'], dataDict['ema26'], dataDict['MACD'],
                                 dataDict['STOCH']]
 
-                    # Ordenar datos
+                    # Assign data
                     high = dataDict['high']
                     stockOpen = dataDict['stockOpen']
                     low = dataDict['low']
@@ -718,9 +717,44 @@ while True:
                     histogram = dataDict['histogram']
                     ema12 = dataDict['ema12']
                     ema26 = dataDict['ema26']
+                    ema5 = dataDict['ema5']
                     avgprices = dataDict['avgprices']
                     avgprice = dataDict['avgprice']
                     volumes = dataDict['volumes']
+
+                    high5m = dataDict5m['high']
+                    stockOpen5m = dataDict5m['stockOpen']
+                    low5m = dataDict5m['low']
+                    close5m = dataDict5m['close']
+                    volume5m = dataDict5m['volume']
+                    RSI5m = dataDict5m['RSI']
+                    MACD5m = dataDict5m['MACD']
+                    VWAP5m = dataDict5m['VWAP']
+                    STOCH5m = dataDict5m['STOCH']
+                    histogram5m = dataDict5m['histogram']
+                    ema125m = dataDict5m['ema12']
+                    ema265m = dataDict5m['ema26']
+                    ema55m = dataDict5m['ema5']
+                    avgprices5m = dataDict5m['avgprices']
+                    avgprice5m = dataDict5m['avgprice']
+                    volumes5m = dataDict5m['volumes']
+
+                    high15m = dataDict15m['high']
+                    stockOpen15m = dataDict15m['stockOpen']
+                    low15m = dataDict15m['low']
+                    close15m = dataDict15m['close']
+                    volume15m = dataDict15m['volume']
+                    RSI15m = dataDict15m['RSI']
+                    MACD15m = dataDict15m['MACD']
+                    VWAP15m = dataDict15m['VWAP']
+                    STOCH15m = dataDict15m['STOCH']
+                    histogram15m = dataDict15m['histogram']
+                    ema1215m = dataDict15m['ema12']
+                    ema2615m = dataDict15m['ema26']
+                    ema515m = dataDict15m['ema5']
+                    avgprices15m = dataDict15m['avgprices']
+                    avgprice15m = dataDict15m['avgprice']
+                    volumes15m = dataDict15m['volumes']
 
                     print()
                     print()
@@ -734,7 +768,7 @@ while True:
                     print()
                     print('###############################')
 
-                    # Contar tendencias bajistas en el minuto actual
+                    # Count bearish trends in the current minute
                     trueCnt = 0
                     trueCnt_ = 0
                     trueCnt__ = 0
@@ -751,11 +785,11 @@ while True:
                         if arr[-3] is True:
                             trueCnt__ = trueCnt__ + 1
 
-                    # Diferencia de precio
+                    # Price difference
                     difference = round(avgprice, 2) - entryPrice
                     lastdifference = previous['close'][-1] - entryPrice
 
-                    # Algoritmo para determinar salidas
+                    # Algorithm to determine exits
                     if difference > .4:
                         tradearray.append('7302734')
                         print('7302734')
