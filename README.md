@@ -215,7 +215,7 @@ The strategy employs multiple exit conditions to secure profits or minimize loss
    python moneyprinter.py
    ```
 
-## 🛠️ Developm
+## 🛠️ Development
 
 ### Contributing
 
