@@ -1,5 +1,4 @@
 import time
-import traceback
 from datetime import datetime
 from discord_webhook import DiscordWebhook, DiscordEmbed
 import data  # Importamos las variables de data.py
@@ -12,17 +11,20 @@ binance_wrapper = BinanceClient()
 
 def getMarketData(avgprices, volumes, interval='1m', symbol=symbol):
     """
-    Obtiene datos del mercado utilizando la API de Binance.
+    Obtiene datos del mercado utilizando la API de Binance y calcula indicadores técnicos.
     """
+    import time
+    import pandas as pd
+    
     max_retries = 5  # Número máximo de intentos para obtener datos
     retry_delay = 10  # Tiempo de espera entre intentos (en segundos)
-
+    
     for attempt in range(max_retries):
         try:
             # Obtener datos de velas (kline) desde Binance
             klines = binance_wrapper.client.get_klines(symbol=symbol, interval=interval, limit=100)
 
-            # Convertir los datos en un DataFrame de pandas
+            # Convertir los datos en un DataFrame
             columns = [
                 'Open time', 'Open', 'High', 'Low', 'Close', 'Volume',
                 'Close time', 'Quote asset volume', 'Number of trades',
@@ -30,12 +32,9 @@ def getMarketData(avgprices, volumes, interval='1m', symbol=symbol):
             ]
             data = pd.DataFrame(klines, columns=columns)
 
-            # Convertir las columnas a tipos numéricos
-            data['Open'] = data['Open'].astype(float)
-            data['High'] = data['High'].astype(float)
-            data['Low'] = data['Low'].astype(float)
-            data['Close'] = data['Close'].astype(float)
-            data['Volume'] = data['Volume'].astype(float)
+            # Convertir las columnas numéricas a tipos float
+            numeric_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+            data[numeric_columns] = data[numeric_columns].astype(float)
 
             # Verificar si los datos están vacíos
             if data.empty:
@@ -43,19 +42,16 @@ def getMarketData(avgprices, volumes, interval='1m', symbol=symbol):
                 time.sleep(retry_delay)
                 continue
 
-            # Imprimir los datos descargados para depuración
-            #print("[DEBUG] Datos descargados de Binance:")
-            #print(data.tail())  # Mostrar las últimas filas
+            # Asegurarse de que los datos estén en orden cronológico ascendente
+            data = data.sort_values('Open time').reset_index(drop=True)
 
-            # Procesar los datos
-            df = data.iloc[::-1]  # Invertir el DataFrame para obtener los datos más recientes al principio
-
-            # Extraer valores escalares
-            stockOpen = df['Open'].iloc[0]  # Último valor de Open
-            high = df['High'].iloc[0]       # Último valor de High
-            low = df['Low'].iloc[0]         # Último valor de Low
-            close = df['Close'].iloc[0]     # Último valor de Close
-            volume = df['Volume'].iloc[0]   # Último valor de Volume
+            # Extraer valores escalares del registro más reciente
+            latest_row = data.iloc[-1]
+            stock_open = latest_row['Open']
+            high = latest_row['High']
+            low = latest_row['Low']
+            close = latest_row['Close']
+            volume = latest_row['Volume']
 
             # Verificar si el volumen es cero
             if volume == 0:
@@ -63,58 +59,63 @@ def getMarketData(avgprices, volumes, interval='1m', symbol=symbol):
                 time.sleep(retry_delay)
                 continue
 
-            # Calcular VWAP
-            VWAPList = (data['Volume'] * (data['High'] + data['Low'] + data['Close']) / 3).cumsum() / data['Volume'].cumsum()
-            VWAP = VWAPList.iloc[-1]  # Último valor de VWAP
+            # Cálculo de VWAP
+            vwap_numerator = (data['Volume'] * (data['High'] + data['Low'] + data['Close']) / 3).cumsum()
+            vwap_denominator = data['Volume'].cumsum()
+            vwap = vwap_numerator.iloc[-1] / vwap_denominator.iloc[-1]
 
-            # Calcular RSI
+            # Cálculo de RSI
             window_length = 14
             close_delta = data['Close'].diff()
             up = close_delta.clip(lower=0)
             down = -1 * close_delta.clip(upper=0)
-            ma_up = up.ewm(com=window_length - 1, adjust=True, min_periods=window_length).mean()
-            ma_down = down.ewm(com=window_length - 1, adjust=True, min_periods=window_length).mean()
-            rsiA = ma_up / ma_down
-            rsiList = 100 - (100 / (1 + rsiA))
-            rsi = rsiList.iloc[-1]  # Último valor de RSI
+            ma_up = up.ewm(com=window_length - 1, adjust=False, min_periods=window_length).mean()
+            ma_down = down.ewm(com=window_length - 1, adjust=False, min_periods=window_length).mean()
+            rsi = 100 - (100 / (1 + (ma_up / ma_down))).iloc[-1]
 
-            # Calcular EMAs
-            ema12 = data['Close'].ewm(span=9, adjust=False).mean().iloc[-1]  # EMA de 12 períodos
-            ema26 = data['Close'].ewm(span=21, adjust=False).mean().iloc[-1]  # EMA de 26 períodos
-            ema5 = data['Close'].ewm(span=8, adjust=False).mean().iloc[-1]    # EMA de 5 períodos
+            # Cálculo de EMAs
+            ema12 = data['Close'].ewm(span=12, adjust=False).mean().iloc[-1]
+            ema26 = data['Close'].ewm(span=26, adjust=False).mean().iloc[-1]
+            ema5 = data['Close'].ewm(span=5, adjust=False).mean().iloc[-1]
 
-            # Calcular MACD
-            k = data['Close'].ewm(span=12, adjust=False, min_periods=12).mean()
-            d = data['Close'].ewm(span=26, adjust=False, min_periods=26).mean()
-            macd = k - d
-            macd_s = macd.ewm(span=9, adjust=False, min_periods=9).mean()
-            macd_h = macd - macd_s
+            # Cálculo de MACD
+            macd_line = data['Close'].ewm(span=12, adjust=False).mean() - data['Close'].ewm(span=26, adjust=False).mean()
+            signal_line = macd_line.ewm(span=9, adjust=False).mean()
+            macd_histogram = macd_line - signal_line
+            current_macd = macd_line.iloc[-1]
+            current_histogram = macd_histogram.iloc[-1]
 
-            currentmacd = macd.iloc[-1]    # Último valor de MACD
-            currenthisto = macd_h.iloc[-1] # Último valor del histograma MACD
+            # Cálculo de STOCH (Stochastic Oscillator)
+            stoch_window = 14  # Período para el cálculo de STOCH
+            data['Lowest Low'] = data['Low'].rolling(window=stoch_window).min()
+            data['Highest High'] = data['High'].rolling(window=stoch_window).max()
+            data['%K'] = 100 * ((data['Close'] - data['Lowest Low']) / (data['Highest High'] - data['Lowest Low']))
+            data['%D'] = data['%K'].rolling(window=3).mean()  # Media móvil de 3 períodos de %K
 
-            # Mostrar los indicadores para depuración
-            # print("[DEBUG] Indicadores obtenidos:")
-            # print(f"stockOpen: {stockOpen}")
-            # print(f"high: {high}")
-            # print(f"low: {low}")
-            # print(f"close: {close}")
-            # print(f"volume: {volume}")
-            # print(f"VWAP: {VWAP}")
-            # print(f"RSI: {rsi}")
-            # print(f"EMA12: {ema12}")
-            # print(f"EMA26: {ema26}")
-            # print(f"EMA5: {ema5}")
-            # print(f"MACD: {currentmacd}")
-            # print(f"Histogram (MACD): {currenthisto}")
-            # print(f"avgprice: {(high + low + close) / 3}")
+            stoch_k = data['%K'].iloc[-1]  # Último valor de %K
+            stoch_d = data['%D'].iloc[-1]  # Último valor de %D
+
 
             # Devolver los datos procesados
             return {
-                'stockOpen': stockOpen, 'high': high, 'low': low, 'close': close, 'volume': volume,
-                'RSI': rsi, 'MACD': currentmacd, 'VWAP': VWAP, 'STOCH': 0, 'histogram': currenthisto,
-                'ema12': ema12, 'ema26': ema26, 'avgprices': avgprices, 'avgprice': (high + low + close) / 3,
-                'volumes': volumes, 'macdlist': macd_s, 'ema12list': ema12, 'ema26list': ema26, 'ema5': ema5
+                'stockOpen': stock_open,
+                'high': high,
+                'low': low,
+                'close': close,
+                'volume': volume,
+                'VWAP': vwap,
+                'RSI': rsi,
+                'ema12': ema12,
+                'ema26': ema26,
+                'ema5': ema5,
+                'MACD': current_macd,
+                'histogram': current_histogram,
+                'STOCH': stoch_k,
+                'STOCH_K': stoch_k,
+                'STOCH_D': stoch_d,
+                'avgprice': (high + low + close) / 3,
+                'avgprices': avgprices,
+                'volumes': volumes,
             }
 
         except Exception as e:
@@ -125,6 +126,7 @@ def getMarketData(avgprices, volumes, interval='1m', symbol=symbol):
             else:
                 print("[ERROR] No se pudieron obtener los datos después de varios intentos.")
                 return None  # Devolver None si no se pueden obtener los datos
+
 
 
 class TradeBot:
